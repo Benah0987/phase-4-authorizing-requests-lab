@@ -7,8 +7,12 @@ class MembersOnlyArticlesController < ApplicationController
   end
 
   def show
-    article = Article.find(params[:id])
-    render json: article
+    article = Article.find_by(id: params[:id], is_member_only: true)
+    if article
+      render json: article
+    else
+      record_not_found
+    end
   end
 
   private
@@ -16,5 +20,27 @@ class MembersOnlyArticlesController < ApplicationController
   def record_not_found
     render json: { error: "Article not found" }, status: :not_found
   end
+end
+class MembersOnlyArticlesController < ApplicationController
+  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
+  def index
+    articles = Article.where(is_member_only: true).includes(:user).order(created_at: :desc)
+    render json: articles, each_serializer: ArticleListSerializer
+  end
+
+  def show
+    article = Article.find_by(id: params[:id], is_member_only: true)
+    if article
+      render json: article
+    else
+      record_not_found
+    end
+  end
+
+  private
+
+  def record_not_found
+    render json: { error: "Article not found" }, status: :not_found
+  end
 end
